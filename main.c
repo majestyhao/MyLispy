@@ -26,19 +26,19 @@ typedef struct mpc_ast_t {
 	char *contents; // actual content: ops and numbers
 	mpc_state_t state; //
 	int children_num; // children number 
-	struct mpc_ast_t **children; // array of children
+	struct mpc_ast_t **children; // array of pointers 
 } mpc_ast_t; */
 
-int number_of_nodes(mpc_ast_t *t) {
+/*int number_of_nodes(mpc_ast_t *t) {
 	if (t -> children_num == 0) return 1;
 	if (t -> children_num >= 1) {
 		int total = 1;
 		for (int i = 0; i < t -> children_num; i++) {
-			total = total + number_of_nodes(t -> children[i]);
+			total += number_of_nodes(t -> children[i]);
 		}
 		return total;
 	}
-}
+}*/
 
 /* Use operator string to see which operator to perform */
 long eval_op(long x, char *op, long y) {
@@ -89,20 +89,22 @@ mpca_lang(MPCA_LANG_DEFAULT,
         expr: <number> | '('<operator><expr>+')';\
         lispy: /^/ <operator><expr>+ /$/; \
         ",
-        Test, Number, Operator, Expr, Lispy);
+        Number, Operator, Expr, Lispy);
 						    
-		/* Attempt to parse the uesr Input */
-        mpc_result_t r;
+		
         while(1){
         char*input=readline("lispy> ");
         add_history(input);
 
-	//	if (strncmp(input, "exit", 4))
-	//		return 0;
+		/* Attempt to parse the uesr Input */
+        mpc_result_t r;
+
+	if (strcmp(input, "exit") == 0)
+			return 0;
 
 
 
-        if(mpc_parse("<stdin>", input, Lispy, &r)){
+        if(mpc_parse("<stdin>", input, Lispy, &r)) {
 											/* Load AST from output */
 //	mpc_ast_t *a = r.output;
 //	printf("Tag: %s\n", a->contents);
@@ -122,7 +124,7 @@ mpca_lang(MPCA_LANG_DEFAULT,
 
 		 /* On Success Pring the AST */
        // mpc_ast_print(r.output);
-        mpc_ast_delete(r.output);
+       // mpc_ast_delete(r.output);
         }else{
 								/* Otherwise Pring the Error */
         mpc_err_print(r.error);
