@@ -29,7 +29,7 @@ typedef struct mpc_ast_t {
 	struct mpc_ast_t **children; // array of pointers 
 } mpc_ast_t; */
 
-/*int number_of_nodes(mpc_ast_t *t) {
+int number_of_nodes(mpc_ast_t *t) {
 	if (t -> children_num == 0) return 1;
 	if (t -> children_num >= 1) {
 		int total = 1;
@@ -38,7 +38,7 @@ typedef struct mpc_ast_t {
 		}
 		return total;
 	}
-}*/
+}
 
 /* Use operator string to see which operator to perform */
 long eval_op(long x, char *op, long y) {
@@ -106,16 +106,17 @@ mpca_lang(MPCA_LANG_DEFAULT,
 
         if(mpc_parse("<stdin>", input, Lispy, &r)) {
 											/* Load AST from output */
-//	mpc_ast_t *a = r.output;
-//	printf("Tag: %s\n", a->contents);
-//	printf("Num of children: %i\n", a->children_num);
+	/*mpc_ast_t *a = r.output;
+	printf("Tag: %s\n", a->contents);
+	printf("Num of children: %i\n", a->children_num);*/
 
-	/* Get First Child */
-//	mpc_ast_t *c0 = a->children[0];
-//	printf("First Child Tag: %s\n", c0 -> tag);
-//	printf("First Child Contents: %s\n", c0 -> contents);
-//	printf("First Child Number of children: %i\n", c0 -> children_num);
+	/* Get First Child 
+	mpc_ast_t *c0 = a->children[0];
+	printf("First Child Tag: %s\n", c0 -> tag);
+	printf("First Child Contents: %s\n", c0 -> contents);
+	printf("First Child Number of children: %i\n", c0 -> children_num);*/
 
+	//printf("num of nodes %i\n", number_of_nodes(&r));
 
 				/* Printing the eval result */
 	long result = eval(r.output);
