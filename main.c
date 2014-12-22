@@ -143,7 +143,7 @@ lval *lval_read(mpc_ast_t *t) {
 	if (strcmp(t -> tag, ">") == 0) x = lval_sexpr();
 	if (strstr(t -> tag, "sexpr")) x = lval_sexpr();
 
-	/* fill this list with any valid expression contained within */
+	/* fill this list with any v alid expression contained within */
 	for (int i = 0; i < t -> children_num; i++) {
 		if (strcmp(t -> children[i] -> contents, "(") == 0) continue;
 		if (strcmp(t -> children[i] -> contents, ")") == 0) continue;
@@ -161,7 +161,7 @@ void lval_print(lval *v);
 void lval_expr_print(lval *v, char open, char close) {
 	putchar(open);
 	for (int i = 0; i < v -> count; i++) {
-		/* Print value contained within */
+		/* Print value co ntained within */
 		lval_print(v -> cell[i]);
 
 		if (i != (v -> count - 1)) {
@@ -198,6 +198,109 @@ void lval_println(lval *v) {
 }
 
 /* EVALUATION */
+
+lval *lval_pop(lval *v, int i) {
+	lval *x = v -> cell[i];
+
+	/* shift mem after the ith item over the top */
+	memmove(&v -> cell[i], &v -> cell[i + 1],
+	sizeof(lval *) * (v -> count - 1 -i));
+
+	v -> count--;
+
+	v-> cell = realloc(v->cell, sizeof(lval*) * v->count);
+	return x;
+}
+
+lval *lval_take(lval *v, int i) {
+	lval *x = lval_pop(v, i);
+	lval_del(v);
+	return x;
+}
+
+lval *builtin_op(lval *a, char *op) {
+	/* Ensure all arguments are numbers */
+	for (int i = 0; i < a -> count; i++) {
+		if (a -> cell[i] -> type != LVAL_NUM) {
+			lval_del(a);
+			return lval_err("cannot operate on non-number!");
+		}
+	}
+
+	/* pop the first element */
+	lval *x = lval_pop(a, 0);
+
+	/* if no arguments and sub then perfrom unary negation */
+	if ((strcmp(op, "-") == 0) && a -> count == 0) {
+		x -> num = -x->num;
+	}
+
+	/* while there are still elements remaining */
+	while (a -> count > 0) {
+		/* Pop the next elem */
+		lval *y = lval_pop(a, 0);
+		
+		if (strcmp(op, "+") == 0) x->num += y->num;
+		if (strcmp(op, "-") == 0) x->num -= y->num;
+		if (strcmp(op, "*") == 0) x->num *= y->num;
+		if (strcmp(op, "/") == 0) {
+			if (y->num == 0) {
+				lval_del(x); lval_del(y);
+				x = lval_err("Division by 0"); break;
+			}
+
+			x->num /= y->num;
+		}
+		lval_del(y);
+	}
+	lval_del(a); 
+	return x;
+}
+
+lval *lval_eval(lval *v);
+lval *lval_eval_sexpr(lval *v) {
+	/* Evaluate Children */
+	for (int i = 0; i < v-> count; i++) {
+		v->cell[i] = lval_eval(v->cell[i]);
+	}
+ 
+	/* Error checking */
+	for (int i = 0; i < v-> count; i++) {
+		if (v -> cell[i] -> type == LVAL_ERR) 
+			return lval_take(v, i);
+	}
+
+		/* Empty expression */
+		if (v -> count == 0) 
+			return v;
+
+		if (v -> count == 1)
+			return lval_take(v, 0);
+	
+		/* Ensure first element is Symbol */
+		lval *f = lval_pop(v, 0);
+		if (f -> type != LVAL_SYM) {
+			lval_del(f);
+			lval_del(v);
+			return lval_err("The target S-expr does not start with symbol!");
+		}
+
+		/* Call bultin with operator */
+		lval *result = builtin_op(v, f -> sym);
+		lval_del(f);
+		return result;
+}
+
+lval *lval_eval(lval *v) {
+	/* Evaluate S-expr 
+	 * check whether cell contains s-expr
+	 * if yes, recursion until hit pure num*/
+	if (v -> type == LVAL_SEXPR) 
+		return lval_eval_sexpr(v);
+	return v;
+}
+
+
 /* Use operator string to see which operator to perform 
 lval eval_op(lval x, char *op, lval y) {
 	/* If either value is an error return it 
@@ -269,7 +372,7 @@ mpca_lang(MPCA_LANG_DEFAULT,
 		/* Attempt to parse the uesr Input */
         mpc_result_t r;
 
-	if (strcmp(input, "exit") == 0)
+	if (strcmp(input, "q") == 0)
 			return 0;
 
 
@@ -292,13 +395,15 @@ mpca_lang(MPCA_LANG_DEFAULT,
 	//lval result = eval(r.output);
 	//lval_println(result);
 	//mpc_ast_delete(r.output);
-	lval *x = lval_read(r.output);
+	lval *x =lval_read(r.output);
+	lval_println(x);
+	x = lval_eval(x);
 	lval_println(x);
 	lval_del(x);
 
 		 /* On Success Pring the AST */
        // mpc_ast_print(r.output);
-       // mpc_ast_delete(r.output);
+        mpc_ast_delete(r.output);
         }else{
 								/* Otherwise Pring the Error */
         mpc_err_print(r.error);
